@@ -31,6 +31,7 @@ htmlcov/
 
 # Private keys
 private_keys.json
+**private_keys.json
 
 # MCP
 .mcp/

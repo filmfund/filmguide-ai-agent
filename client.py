@@ -21,7 +21,7 @@ client = Agent(
     name="Client",
     seed=CLIENT_SEED,
     port=8001, 
-    mailbox=False,
+    mailbox=True,
     endpoint=["http://localhost:8001/submit"]
 )
 
@@ -38,7 +38,6 @@ async def send_message(ctx: Context):
         text="Recommend me Bitcoin movies",
         user_id="test_client_123"
     )
-    
     await ctx.send(MOVIE_AGENT_ADDRESS, msg)
     ctx.logger.info("✅ Message sent! Waiting for response...")
 
