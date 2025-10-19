@@ -6,9 +6,10 @@ import pandas as pd
 
 load_dotenv() 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-AGENT_PORT = os.getenv("AGENT_PORT", "8001")  # Default to 8001 if not set
+AGENT_PORT = os.getenv("AGENT_PORT")  
+AGENT_SEED= os.getenv("AGENT_SEED")
 
-class ChatMessage(Model):
+class Message(Model):
     text: str
     user_id: str
 
@@ -19,25 +20,21 @@ class ChatResponse(Model):
 # Mailbox agent published on Agentverse
 agent = Agent(
     name="Movie Recommender Agent",
-    port=AGENT_PORT,
-    mailbox=True,
-    publish_agent_details=True,
+    port=5050,
+    seed=AGENT_SEED,
+    endpoint = ['http://localhost:5050/submit'],
+    mailbox=False
+    #publish_agent_details=True
 )
 
-# Create a protocol
-chat_proto = Protocol("chat")
 
-#Check agent details
-print(f"Your agent's address is: {agent.address}")
 movies = pd.read_excel("data/movies.xlsx")
-
 
 # Startup handler
 @agent.on_event("startup")
 async def startup_function(ctx: Context):
     ctx.logger.info(f"Hello, I'm agent {agent.name} and my address is {agent.address}.")
     ctx.logger.info(f"Agent is running on port: {AGENT_PORT}")
-    ctx.logger.info(f"Agent mailbox enabled: {agent.mailbox}")
     ctx.logger.info("Agent is ready to receive messages!")
 
 # Function to get movie recommendations
@@ -53,12 +50,12 @@ def get_movie_recommendations(user_input: str) -> str:
     return response.choices[0].message.content
 
 # This runs when we receive a ChatMessage
-@chat_proto.on_message(model=ChatMessage)
-async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
+@agent.on_message(model=Message)
+async def handle_message(ctx: Context, sender: str, msg: Message):
     print(f"\n📨 Got message from {sender}")
-    print(f"   User: {msg.user_id}")
+    ctx.logger.info(f"   User ID: {msg.user_id}")
     print(f"   Message: {msg.text}")
-    
+
     # Get movie recommendations
     try:
         recommendations = get_movie_recommendations(msg.text)
@@ -79,8 +76,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         )
         await ctx.send(sender, error_response)
         print(f"❌ Error occurred: {e}")
-
-agent.include(chat_proto)
+        
 
 @agent.on_event("shutdown")
 async def shutdown(ctx: Context):
