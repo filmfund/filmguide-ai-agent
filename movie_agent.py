@@ -8,9 +8,11 @@ import json
 
 load_dotenv() 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY= os.getenv("OPENAI_API_KEY")
 AGENT_PORT = os.getenv("AGENT_PORT")  
 AGENT_SEED= os.getenv("AGENT_SEED")
 SECURITY_KEY= os.getenv("SECURITY_KEY")
+ASI_ONE_API_KEY=os.getenv("ASI_ONE_API_KEY")
 
 class Message(Model):
     text: str
@@ -26,7 +28,8 @@ agent = Agent(
     name="Movie Recommender Agent",
     port=5050,
     seed=AGENT_SEED,
-    endpoint = ['https://bill-azoted-delia.ngrok-free.dev/submit'],
+    endpoint = 'http://localhost:5050/submit',
+    #endpoint = ['https://bill-azoted-delia.ngrok-free.dev/submit'],
     mailbox=True,
     publish_agent_details=True
 )
@@ -45,7 +48,7 @@ def get_movie_recommendations(user_input: str) -> str:
     url = "https://api.asi1.ai/v1/chat/completions"
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjY0OTEzMDU0NjAsImlhdCI6MTc2MDkwNTQ2MCwiaXNzIjoiZmV0Y2guYWkiLCJqdGkiOiJiOTRhMmNhZWE2NjA4MGY1OTRhNWUzMGEiLCJzY29wZSI6ImF2OnJvIiwic3ViIjoiMGE5MzA0N2UyNDcwYjQ0ZjFkM2QzZGQ4ZjcyNWM5MDA3YWEzNGNmZjczNTkxZGIzIn0.D0Twf15J_xGwTTGlT5mITf8gmFMyIwldWEu3TWD9Bdgh5vb4NiuBnAjKdCzU-GDrVtnBqNbIBPhhxNTX8TzyJzKjgxXngG254so9qh0nBZQZxp0Mx0CT8ayxSNrur8BM1d4IaNP7Ea5Bf8baeO12AD0HI71LXcsGMZbuRiWldVjEJgdXIbPYi4JSnK87RRz7BZaSCX75wbSDgwlmBhMKscgzWntzm_IflSzCjwo5uHnLGj-DNumbL9YZYts7ch1YpJLQky-9KwsMq0R8kHWn_E4RP3tNls8FU90pGlx-EJoK-9WJ9EgRpamTbx1X9gUan7ktTeEBN2kYg9V4yt5-EQ'  # Replace with your API Key
+        'Authorization': f'Bearer {ASI_ONE_API_KEY}'  # Replace with your API Key
     }
 
     prompt = f"""Recommend me 2 or 3 movies based on the following descriptions:
@@ -53,10 +56,24 @@ def get_movie_recommendations(user_input: str) -> str:
     using the following dataset:{movies.head(9).to_dict(orient='records')}
     """
 #TODO : use asi1-mini model
+    response = requests.post(
+        url,
+        headers=headers,
+        json={
+            "model": "asi1-mini",  # Correct ASI:One model
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 500
+        }
+    )
+    """
     response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
+        model="asi1-mini",
         messages=[{"role": "user", "content": prompt}]
     )
+    """
     return response.choices[0].message.content
 
 

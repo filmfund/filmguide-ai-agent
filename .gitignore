@@ -29,9 +29,11 @@ Thumbs.db
 .coverage
 htmlcov/
 
-# Private keys
+# JSON
 private_keys.json
 **private_keys.json
+conversation_memory.json
+**conversation_memory.json
 
 # MCP
 .mcp/
