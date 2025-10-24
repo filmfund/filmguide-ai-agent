@@ -1,0 +1,46 @@
+name: Build and Deploy Docker Image to VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker BackendAgent image
+        run: docker build -t backend_agent:latest --target backend_agent .
+
+      - name: Build Docker MovieAgent image
+        run: docker build -t movie_agent:latest --target movie_agent .
+
+      - name: Save Docker image as tar
+        run: docker save backend_agent:latest movie_agent:latest | gzip > agents_latest.tar.gz
+
+      - name: Copy image to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
+          source: "agents_latest.tar"
+          target: "~"
+
+      - name: Load and run image on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
+          script: |
+            docker load -i ~/agents_latest.tar
+            cd ~/guide2film3agents
+            docker compose up -d
+            docker image prune -f
