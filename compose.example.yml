@@ -1,0 +1,15 @@
+services:
+  movie_agent:
+    image: movie_agent:latest
+    restart: on-failure:10
+    ports:
+      - "5050:5050"
+    env_file:
+      - ./.env
+  backend_agent:
+    image: backend_agent:latest
+    restart: on-failure:10
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
