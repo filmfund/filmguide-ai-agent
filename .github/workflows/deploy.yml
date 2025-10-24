@@ -30,7 +30,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
-          source: "agents_latest.tar"
+          source: "agents_latest.tar.gz"
           target: "~"
 
       - name: Load and run image on VPS
@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
           script: |
-            docker load -i ~/agents_latest.tar
+            docker load -i ~/agents_latest.tar.gz
             cd ~/guide2film3agents
             docker compose up -d
             docker image prune -f
