@@ -47,7 +47,7 @@ print("=" * 60)
 print("Backend Agent Configuration")
 print("=" * 60)
 print(f"Agent Address: {backend_agent.address}")
-print(f"Port: 8001")
+print(f"Port: 8000")
 print(f"Movie Agent Address: {MOVIE_AGENT_ADDR}")
 print("=" * 60)
 
@@ -125,7 +125,7 @@ async def startup(ctx: Context):
     ctx.logger.info("=" * 60)
     ctx.logger.info(f"Backend Address: {backend_agent.address}")
     ctx.logger.info(f"Movie Agent: {MOVIE_AGENT_ADDR}")
-    ctx.logger.info(f"REST Endpoint: http://localhost:8001/recommend")
+    ctx.logger.info(f"REST Endpoint: http://localhost:8000/recommend")
     ctx.logger.info("=" * 60)
 
 @backend_agent.on_message(model=ChatResponse)
@@ -266,5 +266,5 @@ async def shutdown(ctx: Context):
 if __name__ == "__main__":
     print("\n🚀 Starting Backend Agent...")
     print(f"📡 Will forward requests to Movie Agent at: {MOVIE_AGENT_ADDR}")
-    print(f"🌐 REST API will be at: http://localhost:8001/recommend\n")
+    print(f"🌐 REST API will be at: http://localhost:8000/recommend\n")
     backend_agent.run()
