@@ -1,8 +1,9 @@
-# test_system.py
 import requests
 import time
+import os
 
-BACKEND_URL = 'http://localhost:8000/recommend'
+BACKEND_URL = 'http://localhost:8000/chat'
+AGENTVERSE_API_KEY= os.getenv("AGENTVERSE_API_KEY")
 
 def test_recommendation(message, user_id="test_user_001"):
     """Test the complete system"""

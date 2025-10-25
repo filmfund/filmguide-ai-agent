@@ -1,4 +1,3 @@
-# backend_agent.py
 from uagents import Agent, Model, Context
 import os
 import asyncio
@@ -9,15 +8,10 @@ import uuid
 
 load_dotenv()
 
-# -------------------------
-# Configuration
-# -------------------------
-BACKEND_SEED = os.getenv("BACKEND_SEED", "backend-agent-seed-12345")
+BACKEND_SEED = os.getenv("BACKEND_SEED")
 AGENTVERSE_KEY = os.getenv("AGENTVERSE_API_KEY")
 MOVIE_AGENT_ADDR = os.getenv("MOVIE_AGENT_ADDRESS")
 SECURITY_KEY = os.getenv("SECURITY_KEY")
-
-# Memory file
 MEMORY_FILE = "conversation_memory.json"
 
 # -------------------------
@@ -32,15 +26,11 @@ class ChatResponse(Model):
     text: str  
     user_id: str
 
-# -------------------------
-# Backend Agent Setup
-# -------------------------
 backend_agent = Agent(
     name="BackendAgent",
     seed=BACKEND_SEED,
-    port=8000,  # Different port from movie agent (5050)
     mailbox=True,
-    endpoint='http://0.0.0.0:8000'
+    endpoint='http://localhost:8000/chat'
 )
 
 print("=" * 60)
@@ -51,13 +41,11 @@ print(f"Port: 8000")
 print(f"Movie Agent Address: {MOVIE_AGENT_ADDR}")
 print("=" * 60)
 
-# -------------------------
-# Pending Requests Storage
-# -------------------------
+
 pending_requests: Dict[str, dict] = {}
 
 # -------------------------
-# Conversation Memory Functions
+# Conversation Memory 
 # -------------------------
 def load_memory():
     """Load conversation memory from JSON"""
@@ -115,17 +103,15 @@ def format_history(user_id: str):
         formatted += f"{msg['role']}: {msg['content']}\n"
     return formatted
 
-# -------------------------
-# Agent Event Handlers
-# -------------------------
+
 @backend_agent.on_event("startup")
 async def startup(ctx: Context):
     ctx.logger.info("=" * 60)
     ctx.logger.info("🚀 BACKEND AGENT STARTED")
     ctx.logger.info("=" * 60)
-    ctx.logger.info(f"Backend Address: {backend_agent.address}")
+    ctx.logger.info(f"Backend Address: {backend_agent.address}, Wallet: {backend_agent.wallet.address()}")
     ctx.logger.info(f"Movie Agent: {MOVIE_AGENT_ADDR}")
-    ctx.logger.info(f"REST Endpoint: http://localhost:8000/recommend")
+    ctx.logger.info(f"REST Endpoint: http://localhost:8000/chat")
     ctx.logger.info("=" * 60)
 
 @backend_agent.on_message(model=ChatResponse)
@@ -133,22 +119,19 @@ async def handle_movie_response(ctx: Context, sender: str, msg: ChatResponse):
     """
     This handler receives responses from Movie Agent
     """
-    ctx.logger.info(f"📨 Received response from Movie Agent")
+    ctx.logger.info(f"Received response from Movie Agent")
     ctx.logger.info(f"   Sender: {sender}")
     ctx.logger.info(f"   User: {msg.user_id}")
     
     # Find pending request for this user
     if msg.user_id in pending_requests:
-        # Store the response
         pending_requests[msg.user_id]["response"] = msg.text
         pending_requests[msg.user_id]["completed"] = True
-        
-        # Add to memory
         add_to_memory(msg.user_id, "assistant", msg.text)
         
-        ctx.logger.info(f"✅ Response stored for user {msg.user_id}")
+        ctx.logger.info(f"Response stored for user {msg.user_id}")
     else:
-        ctx.logger.warning(f"⚠️  No pending request found for {msg.user_id}")
+        ctx.logger.warning(f"No pending request found for {msg.user_id}")
 
 # -------------------------
 # REST Endpoint for Web Application
@@ -168,7 +151,7 @@ async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendRe
     REST endpoint that your web app will call
     """
     try:
-        ctx.logger.info(f"📥 Request from user: {req.user_id}")
+        ctx.logger.info(f"Request from user: {req.user_id}")
         ctx.logger.info(f"   Message: {req.text}")
         
         # Get conversation history
@@ -245,8 +228,8 @@ async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendRe
         )
         
     except Exception as e:
-        ctx.logger.error(f"❌ Error: {e}")
-        
+        ctx.logger.error(f"Error: {e}")
+    
         if req.user_id in pending_requests:
             del pending_requests[req.user_id]
         
@@ -258,13 +241,8 @@ async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendRe
 
 @backend_agent.on_event("shutdown")
 async def shutdown(ctx: Context):
-    ctx.logger.info("🛑 Backend Agent shutting down")
+    ctx.logger.info("Backend Agent shutting down")
 
-# -------------------------
-# Run Agent
-# -------------------------
+
 if __name__ == "__main__":
-    print("\n🚀 Starting Backend Agent...")
-    print(f"📡 Will forward requests to Movie Agent at: {MOVIE_AGENT_ADDR}")
-    print(f"🌐 REST API will be at: http://localhost:8000/recommend\n")
     backend_agent.run()
