@@ -145,7 +145,7 @@ class RecommendResponse(Model):
     user_id: str
     session_id: str
 
-@backend_agent.on_rest_post("/recommend", RecommendRequest, RecommendResponse)
+@backend_agent.on_rest_post("/chat", RecommendRequest, RecommendResponse)
 async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendResponse:
     """
     REST endpoint that your web app will call

@@ -1,4 +1,4 @@
-from uagents import Agent, Context, Model, Protocol
+from uagents import Agent, Context, Model
 import os
 import openai 
 from dotenv import load_dotenv
@@ -22,7 +22,6 @@ class ChatResponse(Model):
     text: str  
     user_id: str
 
-# Mailbox agent published on Agentverse
 agent = Agent(
     name="Movie Recommender Agent",
     port=5050,
@@ -46,7 +45,7 @@ def get_movie_recommendations(user_input: str) -> str:
     url = "https://api.asi1.ai/v1/chat/completions"
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {ASI_ONE_API_KEY}'  # Replace with your API Key
+        'Authorization': f'Bearer {ASI_ONE_API_KEY}' 
     }
 
     prompt = f"""
@@ -82,7 +81,7 @@ def get_movie_recommendations(user_input: str) -> str:
 
 @agent.on_message(model=Message)
 async def handle_message(ctx: Context, sender: str, msg: Message):
-    print(f"\n📨 Got message from {sender}")
+    print(f"\nGot message from {sender}")
     ctx.logger.info(f"   User ID: {msg.user_id}")
     print(f"   Message: {msg.text}")
 
@@ -108,7 +107,7 @@ async def handle_message(ctx: Context, sender: str, msg: Message):
             user_id=msg.user_id
         )
         await ctx.send(sender, error_response)
-        print(f"❌ Error occurred: {e}")
+        print(f"Error occurred: {e}")
 
 
 @agent.on_event("shutdown")
