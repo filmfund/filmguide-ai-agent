@@ -21,8 +21,11 @@ jobs:
       - name: Build Docker MovieAgent image
         run: docker build -t movie_agent:latest --target movie_agent .
 
+      - name: Build Docker TrailerAgent image
+        run: docker build -t trailer_agent:latest --target trailer_agent .
+
       - name: Save Docker image as tar
-        run: docker save backend_agent:latest movie_agent:latest | gzip > agents_latest.tar.gz
+        run: docker save backend_agent:latest movie_agent:latest trailer_agent:latest | gzip > agents_latest.tar.gz
 
       - name: Copy image to VPS
         uses: appleboy/scp-action@v1

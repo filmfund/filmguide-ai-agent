@@ -13,3 +13,6 @@ FROM base AS movie_agent
 CMD ["python", "movie_agent.py"]
 EXPOSE 5050
 
+FROM base AS trailer_agent
+CMD ["python", "trailer_agent.py"]
+EXPOSE 5051
