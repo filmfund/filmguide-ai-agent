@@ -31,7 +31,7 @@ backend_agent = Agent(
     name="BackendAgent",
     seed=BACKEND_SEED,
     mailbox=True,
-    endpoint=BACKEND_ENDPOINT + '/chat'
+    endpoint=BACKEND_ENDPOINT + '/submit'
 )
 
 print("=" * 60)
