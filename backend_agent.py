@@ -11,9 +11,10 @@ load_dotenv()
 BACKEND_SEED = os.getenv("BACKEND_SEED")
 AGENTVERSE_KEY = os.getenv("AGENTVERSE_API_KEY")
 MOVIE_AGENT_ADDR = os.getenv("MOVIE_AGENT_ADDRESS")
+TRAILER_AGENT_ADDR = os.getenv("TRAILER_AGENT_ADDRESS")
 SECURITY_KEY = os.getenv("SECURITY_KEY")
+BACKEND_ENDPOINT = os.getenv("BACKEND_ENDPOINT")
 MEMORY_FILE = "conversation_memory.json"
-BACKEND_ENDPOINT=os.getenv("BACKEND_ENDPOINT")
 
 # -------------------------
 # Message Models - MUST MATCH movie_agent.py EXACTLY!
@@ -40,6 +41,7 @@ print("=" * 60)
 print(f"Agent Address: {backend_agent.address}")
 print(f"Port: 8000")
 print(f"Movie Agent Address: {MOVIE_AGENT_ADDR}")
+print(f"Trailer Agent Address: {TRAILER_AGENT_ADDR}")
 print("=" * 60)
 
 
@@ -111,7 +113,6 @@ async def startup(ctx: Context):
     ctx.logger.info("🚀 BACKEND AGENT STARTED")
     ctx.logger.info("=" * 60)
     ctx.logger.info(f"Backend Address: {backend_agent.address}, Wallet: {backend_agent.wallet.address()}")
-    ctx.logger.info(f"Movie Agent: {MOVIE_AGENT_ADDR}")
     ctx.logger.info(f"REST Endpoint: http://localhost:8000/chat")
     ctx.logger.info("=" * 60)
 
@@ -146,6 +147,12 @@ class RecommendResponse(Model):
     user_id: str
     session_id: str
 
+def agent_address_router(text: str):
+    trailer_keywords = ["trailer", "watch", "show me", "clip", "video"]
+    if any(word.lower() in text.lower() for word in trailer_keywords):
+        return TRAILER_AGENT_ADDR
+    return MOVIE_AGENT_ADDR
+
 @backend_agent.on_rest_post("/chat", RecommendRequest, RecommendResponse)
 async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendResponse:
     """
@@ -178,17 +185,19 @@ async def recommend_endpoint(ctx: Context, req: RecommendRequest) -> RecommendRe
             "completed": False
         }
         
-        # Create message for Movie Agent
+        
+        # Create message for the Agent
         movie_message = Message(
             text=enhanced_text,
             user_id=req.user_id,
             security_key=SECURITY_KEY
         )
         
-        ctx.logger.info(f"📤 Forwarding to Movie Agent...")
-        
-        # Send to Movie Agent
-        await ctx.send(MOVIE_AGENT_ADDR, movie_message)
+        #Determine the agent
+        agent_addr = agent_address_router(req.text)
+        agent_type = "Trailer" if TRAILER_AGENT_ADDR is not None and agent_addr == TRAILER_AGENT_ADDR else "Movie"
+        ctx.logger.info(f" Forwarding to {agent_type} Agent...")
+        await ctx.send(agent_addr, movie_message)
         
         # Wait for response with timeout
         max_wait = 30  # seconds

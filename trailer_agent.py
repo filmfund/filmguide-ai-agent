@@ -4,17 +4,15 @@ import openai
 from dotenv import load_dotenv
 import pandas as pd
 import requests
-import json
 
 load_dotenv() 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-MOVIE_AGENT_PORT = os.getenv("MOVIE_AGENT_PORT")  
-MOVIE_AGENT_SEED = os.getenv("MOVIE_AGENT_SEED")
-SECURITY_KEY = os.getenv("SECURITY_KEY")
-ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY")
-MOVIE_ENDPOINT = os.getenv("MOVIE_ENDPOINT")
-
+OPENAI_API_KEY= os.getenv("OPENAI_API_KEY")
+TRAILER_AGENT_PORT = os.getenv("TRAILER_AGENT_PORT")  
+TRAILER_AGENT_SEED= os.getenv("TRAILER_AGENT_SEED")
+SECURITY_KEY= os.getenv("SECURITY_KEY")
+ASI_ONE_API_KEY=os.getenv("ASI_ONE_API_KEY")
+TRAILER_ENDPOINT=os.getenv("TRAILER_ENDPOINT")
 
 class Message(Model):
     text: str
@@ -25,33 +23,31 @@ class ChatResponse(Model):
     text: str  
     user_id: str
 
-agent = Agent(
-    name="Movie Recommender Agent",
-    port=MOVIE_AGENT_PORT,
-    seed=MOVIE_AGENT_SEED,
-    endpoint = [MOVIE_ENDPOINT+'/submit'],
+trailer_agent = Agent(
+    name="Trailer Agent",
+    port=TRAILER_AGENT_PORT,
+    seed=TRAILER_AGENT_SEED,
+    endpoint = [TRAILER_ENDPOINT+'/submit'],
     #endpoint = ['https://bill-azoted-delia.ngrok-free.dev/submit'],
     mailbox=True,
     publish_agent_details=True
 )
 
-
-# Startup handler
-@agent.on_event("startup")
+@trailer_agent.on_event("startup")
 async def startup_function(ctx: Context):
-    ctx.logger.info(f"Hello, I'm agent {agent.name} and my address is {agent.address}. Wallet: {agent.wallet.address()}")
+    ctx.logger.info(f"Hello, I'm agent {trailer_agent.name} and my address is {trailer_agent.address}. Wallet: {trailer_agent.wallet.address()}")
     ctx.logger.info("Agent is ready to receive messages!")
-    global movies, movies_dict, movies_compact
+    global movies, movies_compact, movies_video_dict
     movies = pd.read_csv("data/movies.csv")
     movies_compact = ""
     for _, movie in movies.iterrows():
         movies_compact += f"{movie['Name ']} - {movie['Genre']} - {movie['video']} - {movie['Director']} - {movie['Description short ']}\n"
+
+    #movies_dict=movies.to_dict(orient='records')
+    movies_video_dict = movies['video'].to_dict()
     ctx.logger.info(f"Loaded {len(movies)} movies into memory")
 
-
-
-# Function to get movie recommendations
-def get_movie_recommendations(user_input: str) -> str:
+def get_trailers(user_input: str) -> str:
     url = "https://api.asi1.ai/v1/chat/completions"
     headers = {
         'Content-Type': 'application/json',
@@ -59,13 +55,16 @@ def get_movie_recommendations(user_input: str) -> str:
     }
 
     prompt = f"""
-    You are **FilmGuide**.
-    Your task:
-    Recommend 2-3 movies that match the user's request
-    You chat naturally with users about movies, actors, genres, and recommendations.
-    You can suggest movies, describe plots, mention directors or actors, and give brief opinions.
-    Use the provided dataset if relevant, otherwise use your own film knowledge.
+    You are TrailerGuide, a trailer finder assistant.
 
+    Your task:
+    - Find the trailer link for the movie the user mentions
+    - If no exact match, suggest 2-3 similar movies with their trailers
+    - Be concise and helpful
+    - Provide insights from the transcript if available.
+
+    Trailers from the dataset : {movies_video_dict}
+    
     The user says:
     "{user_input}"
 
@@ -90,42 +89,39 @@ def get_movie_recommendations(user_input: str) -> str:
 
 
 
-@agent.on_message(model=Message)
+@trailer_agent.on_message(model=Message)
 async def handle_message(ctx: Context, sender: str, msg: Message):
     print(f"\nGot message from {sender}")
     ctx.logger.info(f"   User ID: {msg.user_id}")
     print(f"   Message: {msg.text}")
 
-    # Get movie recommendations
     try:
         if msg.security_key != SECURITY_KEY:
             raise Exception("Access denied. Security key not valid.")
         
-        recommendations = get_movie_recommendations(msg.text)
-        print(f"🎬 Generated recommendations: {recommendations}")
+        trailers = get_trailers(msg.text)
+        print(f"Trailer information: {trailers}")
         
         # Send response back to the sender
         response = ChatResponse(
-            text=recommendations,
+            text=trailers,
             user_id=msg.user_id
         )
         await ctx.send(sender, response)
-        print(f"✅ Response sent back to {sender}")
+        print(f"Response sent back to {sender}")
         
     except Exception as e:
-        error_message = f"Sorry, I encountered an error: {str(e)}"
-        print(f"❌ Error occurred: {e}")
-        
         error_response = ChatResponse(
-            text=error_message,
+            text=f"Sorry, I encountered an error: {str(e)}",
             user_id=msg.user_id
         )
         await ctx.send(sender, error_response)
+        print(f"Error occurred: {e}")
 
 
-@agent.on_event("shutdown")
+@trailer_agent.on_event("shutdown")
 async def shutdown(ctx: Context):
-    ctx.logger.info("Movie Recommender Agent shutting down")
+    ctx.logger.info("Trailer Agent shutting down")
 
 if __name__ == "__main__":
-    agent.run()
+    trailer_agent.run()

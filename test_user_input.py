@@ -5,7 +5,7 @@ import os
 BACKEND_URL = 'http://localhost:8000/chat'
 AGENTVERSE_API_KEY= os.getenv("AGENTVERSE_API_KEY")
 
-def test_recommendation(message, user_id="test_user_001"):
+def test_recommendation(message, user_id="test_user_002"):
     """Test the complete system"""
     
     print("\n" + "=" * 60)
@@ -54,14 +54,14 @@ def test_recommendation(message, user_id="test_user_001"):
 
 if __name__ == "__main__":
     # Test 1: First request
-    test_recommendation("Recommend me Bitcoin documentaries")
+    test_recommendation("recommend me a crypto movie")
     
     # Wait a bit
     time.sleep(3)
     
     # Test 2: Follow-up (tests conversation memory)
     test_recommendation(
-        "Tell me more about the first movie",
+        "where can i watch Bitcoin documentaries",
         user_id="test_user_001"  # Same user ID
     )
     
@@ -70,6 +70,6 @@ if __name__ == "__main__":
     
     # Test 3: Different user (separate conversation)
     test_recommendation(
-        "Show me thriller movies about crypto",
+        "thriller movies about crypto",
         user_id="alice"  # Different user
     )
