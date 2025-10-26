@@ -13,6 +13,7 @@ AGENTVERSE_KEY = os.getenv("AGENTVERSE_API_KEY")
 MOVIE_AGENT_ADDR = os.getenv("MOVIE_AGENT_ADDRESS")
 SECURITY_KEY = os.getenv("SECURITY_KEY")
 MEMORY_FILE = "conversation_memory.json"
+BACKEND_ENDPOINT=os.getenv("BACKEND_ENDPOINT")
 
 # -------------------------
 # Message Models - MUST MATCH movie_agent.py EXACTLY!
@@ -30,7 +31,7 @@ backend_agent = Agent(
     name="BackendAgent",
     seed=BACKEND_SEED,
     mailbox=True,
-    endpoint='http://localhost:8000/chat'
+    endpoint=BACKEND_ENDPOINT + '/chat'
 )
 
 print("=" * 60)

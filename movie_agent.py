@@ -12,6 +12,7 @@ AGENT_PORT = os.getenv("AGENT_PORT")
 AGENT_SEED= os.getenv("AGENT_SEED")
 SECURITY_KEY= os.getenv("SECURITY_KEY")
 ASI_ONE_API_KEY=os.getenv("ASI_ONE_API_KEY")
+MOVIE_ENDPOINT=os.getenv("MOVIE_ENDPOINT")
 
 class Message(Model):
     text: str
@@ -26,7 +27,7 @@ agent = Agent(
     name="Movie Recommender Agent",
     port=5050,
     seed=AGENT_SEED,
-    endpoint = ['http://localhost:5050/submit'],
+    endpoint = [MOVIE_ENDPOINT+'/submit'],
     #endpoint = ['https://bill-azoted-delia.ngrok-free.dev/submit'],
     mailbox=True,
     publish_agent_details=True
